@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from "react";
 
 const stories = [
   {
-    name: "Aarav Mehta",
+    name: "Ankit Raushan ",
     image: "/assets/teams/graphics.jpg",
-    title: "Launched a Successful EdTech Startup",
+    title: "Want to become Biggest supplier in customised and personalized water bottle with their own choice",
     description:
-      "With the support from Shyam Lal College's Innovation Council, Aarav turned his passion into 'LearnEdge' — an EdTech platform now used by 20,000+ students across India. His journey from classroom projects to a thriving business inspires many budding entrepreneurs.",
-    achievement: "20,000+ active users",
+      "Bodhi Water provides affordable, hygienic, and eco-friendly premium bottled water customized with logos or event branding for local businesses and events in Tier 2/3 towns, offering fast delivery, recyclable materials, and subscription-based supply to enhance brand visibility and customer experience.",
+    achievement: "Successfully developed and tested the Bodhi Water prototype with cafés, hotels, and event organizers; received positive feedback for premium design and affordability; established regular supply agreements with local businesses; and initiated plans for eco-friendly and QR-enabled bottle innovations.",
   },
   {
     name: "Meera Sharma",
