@@ -11,18 +11,18 @@ const stories = [
     title: "Want to become Biggest supplier in customised and personalized water bottle with their own choice",
     description:
       "Bodhi Water provides affordable, hygienic, and eco-friendly premium bottled water customized with logos or event branding for local businesses and events in Tier 2/3 towns, offering fast delivery, recyclable materials, and subscription-based supply to enhance brand visibility and customer experience.",
-    achievement: "Successfully developed and tested the Bodhi Water prototype with cafés, hotels, and event organizers; received positive feedback for premium design and affordability; established regular supply agreements with local businesses; and initiated plans for eco-friendly and QR-enabled bottle innovations.",
+    achievement: "Successfully tested the Bodhi Water prototype with cafés, hotels, and events, received positive feedback, secured regular supply deals, and began eco-friendly, QR-enabled innovations.",
   },
   {
-    name: "Meera Sharma",
+    name: "Anshumaan Pratap Singh",
     image: "/assets/teams/graphics.jpg",
-    title: "Cracked UPSC with AIR 68",
+    title: "ISRO INSIGHT",
     description:
       "Meera credits her success to the college's mentorship program, extensive library resources, and the supportive peer community that fueled her discipline. She now serves as an inspiration for civil service aspirants across the campus.",
     achievement: "All India Rank 68",
   },
   {
-    name: "Rohan Verma",
+    name: "Abhishek Kumar",
     image: "/assets/teams/graphics.jpg",
     title: "Secured a Role at Google",
     description:
@@ -30,7 +30,7 @@ const stories = [
     achievement: "Google India",
   },
   {
-    name: "Sara Ali",
+    name: "Aryan",
     image: "/assets/teams/graphics.jpg",
     title: "Founder of EcoThreads",
     description:
