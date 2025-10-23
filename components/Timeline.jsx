@@ -4,12 +4,12 @@ import { motion, useAnimation } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const events = [
-  { year: 2019, title: "Launch Year", description: "IIC was formed and introduced with initial workshops and startup awareness." },
-  { year: 2020, title: "Growth Phase", description: "Hackathons and mentorship programs launched." },
-  { year: 2021, title: "Community Building", description: "Student innovation cells were formed." },
-  { year: 2022, title: "Collaborations", description: "Partnered with startups and launched demo days." },
-  { year: 2023, title: "Expanding Impact", description: "Reached 1000+ students with multiple national events." },
-  { year: 2024, title: "Innovation Drive", description: "Focused on research & entrepreneurship-driven outcomes." },
+  { year: 2018, title: "Launch Year", description: "Ideation, Problem-Solving, Design Thinking, IP Awareness" },
+  { year: 2019, title: "Design Thinking, Pitch-a-Thon, National Startup Policy", description: "Workshops: Group discussions, design thinking, business model canvas,Social entrepreneurship and frugal innovations events,National Innovation and Start-up Policy workshops" },
+  { year: 2020, title: "Community Building", description: "Competitions, IP Workshops, Mentoring, PoC, Business Plan" },
+  { year: 2021, title: "Collaborations", description: "Incubation, Innovation Fairs, Outreach, Startup Policy" },
+  { year: 2022, title: "Expanding Impact", description: "IP Rights, Patents, B-Plan Competitions, Innovation Day" },
+  { year: 2023, title: "Innovation Drive", description: "Hackathons, Field Visits, BMC Workshops, Orientation" },
 ];
 
 const Timeline = () => {
