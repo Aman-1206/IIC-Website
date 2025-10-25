@@ -1,19 +1,10 @@
+// app/api/chatbot/route.js
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Note: Using the model recommended for Grounding (RAG-lite)
-const MODEL_NAME = "gemini-2.5-flash-preview-09-2025"; 
-
 // Initialize with the SECURE, server-side environment variable
-// The client will automatically pick up the GEMINI_API_KEY
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Define the bot's persistent system instructions outside the POST function for cleanliness
-const IIC_SYSTEM_INSTRUCTION = `You are a professional and concise chatbot assistant for the Institution's Innovation Council (IIC) at Shyam Lal College. Your tone is helpful and direct. You must follow these rules strictly:
-1. Keep all responses very short, maximum 1-3 sentences.
-2. Do not use markdown (no bolding or lists).
-3. Directly answer the user's question. Do not introduce yourself or list example questions.
-4. Only answer questions related to IIC Shyam Lal College. If asked about something else, politely state that you can only help with IIC-related queries.`;
+const MODEL_NAME = "gemini-2.5-flash";
 
 export async function POST(req) {
   try {
@@ -24,38 +15,32 @@ export async function POST(req) {
     }
 
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: `You are a professional and concise chatbot assistant for the Institution's Innovation Council (IIC) at Shyam Lal College.
 
-    // Using generateContent with configuration is cleaner for single-turn requests
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: message }] }],
-      config: {
-        // Set the persona/rules using the systemInstruction parameter
-        systemInstruction: IIC_SYSTEM_INSTRUCTION,
-        
-        // Enable Google Search grounding (RAG-lite) for factual accuracy
-        tools: [{ googleSearch: {} }],
-      },
-    });
-    
-    // Extract text response
-    const responseText = result.text;
-    
-    // Optional: Extract citations/sources from the grounding metadata
-    const groundingMetadata = result.candidates?.[0]?.groundingMetadata;
-    const sources = groundingMetadata?.groundingChunks?.map(chunk => ({
-      title: chunk.title,
-      uri: chunk.web.uri,
-    })) || [];
+Your tone is helpful and direct. You must follow these rules strictly:
 
-    // Return the response and sources
-    return NextResponse.json({ 
-      response: responseText, 
-      sources: sources 
+Keep all responses very short. Maximum 1-3 sentences.
+
+Do not use markdown. (No asterisks for bolding or lists).
+
+Directly answer the user's question. Do not introduce yourself or list example questions.
+
+Only answer questions related to IIC Shyam Lal College. If asked about something else, politely state that you can only help with IIC-related queries.` }], // Your system prompt
+        },
+      ],
     });
+
+    const result = await chat.sendMessage(message);
+    const response = await result.response;
+
+    return NextResponse.json({ response: response.text() });
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // Returning a 500 status here is correct for a server-side API failure.
     return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
   }
 }
