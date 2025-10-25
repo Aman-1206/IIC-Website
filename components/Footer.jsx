@@ -158,8 +158,8 @@ const Footer = () => {
         <div>
           <h4 className="font-bold text-base md:text-lg mb-2">Contact Us</h4>
           <p>📍G.T. Road,Shahdara,Delhi- 110032, Shyam Lal College, DU</p>
-          <p>📞 011-35016514</p>
-          <p>📧 iiccouncil@shyamlal.du.ac.in</p>
+          <p>📞 8527972684</p>
+          <p>📧 icouncil@shyamlal.du.ac.in</p>
         </div>
       </div>
 
