@@ -14,6 +14,9 @@ export const metadata = {
   title: "IIC | Shyam Lal College",
   description: "Explore innovation and entrepreneurship initiatives at IIC Shyam Lal College. Stay updated with events, workshops, and opportunities driving student innovation and startup culture."
 ,
+  verification: {
+    google: "hDyufdy53Hjc-Ykqt6YQVbSujn-Fdm0i89D3Q-tMAZo",
+  },
 };
 
 export default function RootLayout({ children }) {
