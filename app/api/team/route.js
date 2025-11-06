@@ -20,7 +20,7 @@ export async function GET() {
       "PR Head",
       "Content Head",
       "Event Manegement Head", 
-      "Graphic Head", 
+      "Graphics Head", 
       "Technical Head"];
 
     const leadershipRoles = [...facultyRoleOrder, ...studentRoleOrder];

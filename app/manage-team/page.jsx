@@ -11,8 +11,8 @@ import Image from 'next/image';
 const studentRoles = [
   "President", "Coordinator", "Outreach Coordinator", "Innovation Activity Coordinator", 
   "Secretary", "Treasurer", "Marketing And PR Head", "Content Head", "Event Management Head", 
-  "Graphic's and Design Head", "Technical Head", "Marketing & PR", "Content Writing", 
-  "Event Management", "Graphics", "Technical Team"
+  "Graphics Head", "Technical Head", "Marketing & PR", "Content Writing", 
+  "Event Management", "Graphics Team", "Technical Team"
 ];
 const facultyRoles = ["IIC, SLC Principal", "Convener", "Dept. of Physics", "Dept. of Mathematics", "Dept. of Computer Science", "Dept. of Commerce", "Dept. of Chemistry", "Dept. of Economics"];
 
