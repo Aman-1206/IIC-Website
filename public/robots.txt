@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://iic-slc.live
+
+# Sitemaps
+Sitemap: https://iic-slc.live/sitemap.xml
