@@ -11,9 +11,6 @@ module.exports = {
   robotsTxtOptions: {
     policies: [
       { userAgent: '*', allow: '/' },
-    ],
-    additionalSitemaps: [
-      `${siteUrl}/sitemap.xml`,
-    ],
+    ]
   },
 };
