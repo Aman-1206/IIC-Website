@@ -4,15 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import Otp from "@/models/Otp";
 import User from "@/models/User";
 import LoginHistory from "@/models/LoginHistory";
-import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+import { sendOTP } from "@/lib/sendEmail";
 
 export const authOptions = {
   // 1. Providers
@@ -33,18 +25,15 @@ export const authOptions = {
         if (!otp) {
           const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
           const tenMinutesFromNow = new Date(Date.now() + 10 * 60 * 1000);
+
           await Otp.findOneAndUpdate(
             { email },
             { email, otp: generatedOtp, expiresAt: tenMinutesFromNow },
             { upsert: true, new: true }
           );
 
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: "Your IIC Login OTP Code",
-            text: `Your OTP code is: ${generatedOtp}. It will expire in 10 minutes.`,
-          });
+          await sendOTP(email, generatedOtp);
+
           
           throw new Error("OTP_SENT");
         }
@@ -55,8 +44,8 @@ export const authOptions = {
           if (!otpRecord || otpRecord.otp !== otp || new Date() > otpRecord.expiresAt) {
             throw new Error("Invalid or expired OTP");
           }
-          await Otp.deleteOne({ email });
 
+          await Otp.deleteOne({ email });
           const user = await User.findOne({ email });
           if (!user) {
             throw new Error("You are not authorized. Please contact an admin.");
