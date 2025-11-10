@@ -1,0 +1,59 @@
+// app/api/forms/route.js
+import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/mongodb';
+import FormSubmission from '@/models/FormSubmission';
+import { sendEmail } from '@/lib/sendEmail';
+
+export async function POST(req) {
+  try {
+    const body = await req.json();
+    const { type, name, email, message, extra } = body;
+
+    if (!type || !name || !email || !message) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Save to DB
+    await dbConnect();
+    const submission = await FormSubmission.create({
+      type,
+      name,
+      email,
+      message,
+      extra: extra || {},
+    });
+
+    // Admin notification email
+    const adminHtml = `
+      <div style="font-family: Arial, sans-serif; max-width:700px;">
+        <h2>New ${type} submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <div style="white-space:pre-wrap; border-left:2px solid #eee; padding-left:10px;">${message}</div>
+        <p style="margin-top:12px;"><strong>Extra:</strong> ${JSON.stringify(extra || {})}</p>
+        <p style="font-size:12px;color:#666;margin-top:16px;">View submissions in admin panel.</p>
+      </div>
+    `;
+
+    await sendEmail(process.env.ADMIN_EMAIL, `New ${type} submission from ${name}`, adminHtml);
+
+    // Thank you email to user
+    const userHtml = `
+      <div style="font-family: Arial, sans-serif; max-width:700px;">
+        <h2>Thanks for contacting IIC SLC</h2>
+        <p>Hi ${name},</p>
+        <p>Thanks for your ${type === 'idea' ? 'idea submission' : type === 'proposal' ? 'proposal' : 'request for collaboration'}.</p>
+        <p>We've received your submission and our team will get back to you shortly.</p>
+        <p style="margin-top:10px;">— IIC SLC Team</p>
+      </div>
+    `;
+
+    await sendEmail(email, `Thanks for your ${type} submission — IIC SLC`, userHtml);
+
+    return NextResponse.json({ success: true, id: submission._id }, { status: 201 });
+  } catch (err) {
+    console.error('Form API error', err);
+    return NextResponse.json({ error: err?.message || 'Server error' }, { status: 500 });
+  }
+}

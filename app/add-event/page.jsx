@@ -251,7 +251,7 @@ export default function AddEventPage() {
 
           {form.pdf && (
             <p className="text-xs text-green-600 mt-1">
-              ✅ PDF uploaded:{" "}
+              ✅ Image uploaded:{" "}
               <a
                 href={form.pdf}
                 target="_blank"
