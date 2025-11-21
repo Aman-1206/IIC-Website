@@ -81,24 +81,24 @@ const ContactSection = () => {
 
               <div className="flex items-center gap-3">
                 <Phone className="text-blue-700 w-5 h-5" />
-                <p className="text-black">+91 99999 99999</p>
+                <p className="text-black">+91 8287666486</p>
               </div>
 
               <div className="flex items-center gap-3">
                 <Mail className="text-blue-700 w-5 h-5" />
-                <p className="text-black">iic@shyamlal.du.ac.in</p>
+                <p className="text-black">icouncil@shyamlal.du.ac.in</p>
               </div>
 
               {/* Social Icons */}
               <div className="flex gap-4 pt-2">
                 <a
-                  href="#"
+                  href="https://www.linkedin.com/company/iicslc"
                   className="bg-black p-2 rounded-full hover:scale-110 transition"
                 >
                   <Linkedin className="text-white w-5 h-5" />
                 </a>
                 <a
-                  href="#"
+                  href="https://www.instagram.com/iic.slc?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
                   className="bg-black p-2 rounded-full hover:scale-110 transition"
                 >
                   <Instagram className="text-white w-5 h-5" />

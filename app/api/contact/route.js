@@ -1,52 +1,69 @@
-import nodemailer from 'nodemailer';
+import { NextResponse } from "next/server";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req) {
-  const { name, email, subject, message } = await req.json();
-
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
   try {
-    // Send to Admin
-    await transporter.sendMail({
-      from: `"IIC Website Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.ADMIN_EMAIL,
-      subject: `New Inquiry: ${subject}`,
+    const { name, email, subject, message } = await req.json();
+
+    if (!name || !email || !subject || !message) {
+      return NextResponse.json(
+        { success: false, error: "All fields are required." },
+        { status: 400 }
+      );
+    }
+
+    // Send email to Admin/Support
+    const adminMail = await resend.emails.send({
+      from: `IIC Website <${process.env.CONTACT_FROM_EMAIL}>`,
+      to: [process.env.ADMIN_EMAIL],
+      subject: `New Contact Form: ${subject}`,
       html: `
-       <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
-          <h2 style="color: #FD5B20;">${name}!</h2>
-          <p>Email : <strong>${email}</strong>.</p>
-          <p>Subject: <strong>${subject}</strong></p>
-          <p>Message: <strong>${message}</strong></p>
-          </div>
+        <h3>New Contact Form Submission</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
       `,
     });
 
-    // Thank You Mail to User
-    await transporter.sendMail({
-      from: `"IIC Council" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Thank you for contacting IIC",
+    // Send confirmation email to user
+    const userMail = await resend.emails.send({
+      from: `IIC Team <${process.env.CONTACT_FROM_EMAIL}>`,
+      to: [email],
+      subject: "We received your message",
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
-          <h2 style="color: #FD5B20;">Thank You, ${name}!</h2>
-          <p>We have received your message regarding <strong>${subject}</strong>.</p>
-          <p>Our team will get in touch with you shortly.</p>
-          <p style="margin-top: 20px;">Warm regards,<br/><strong>Institution’s Innovation Council</strong></p>
-        </div>
+        <p>Hi <strong>${name}</strong>,</p>
+        <p>Thank you for contacting the <b>Institution's Innovation Council</b>.</p>
+        <p>We have received your message and our team will reach out to you shortly.</p>
+        
+        <br />
+        <h4>Your Message:</h4>
+        <p><i>${message}</i></p>
+        
+        <br />
+        <p>Warm Regards,<br/>
+        IIC Team<br/>
+        Shyam Lal College</p>
       `,
     });
 
-    return new Response(JSON.stringify({ success: true }), { status: 200 });
-  } catch (err) {
-    console.error("Email error:", err);
-    return new Response(JSON.stringify({ success: false, error: err.message }), {
-      status: 500,
+    return NextResponse.json({
+      success: true,
+      adminMail,
+      userMail,
     });
+  } catch (error) {
+    console.error("Resend Contact Error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to send message.",
+      },
+      { status: 500 }
+    );
   }
 }

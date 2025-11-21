@@ -5,7 +5,7 @@ import { EdgeStoreProvider } from '../lib/edgestore';
 import { Toaster } from "@/components/ui/sonner";
 import ChatBot from "@/components/ChatBot";
 import { Providers } from "./providers";
-
+import { Analytics } from "@vercel/analytics/next"
 
 const outfit = Outfit({ subsets: ["latin"] });
 
@@ -31,6 +31,7 @@ export default function RootLayout({ children }) {
           <ChatBot />
           <Toaster/>
           </EdgeStoreProvider>
+          <Analytics />
         </Providers>
       </body>
     </html>
