@@ -21,6 +21,13 @@ export default function GalleryForm() {
       .then((data) => setEventSuggestions(data.map((event) => event.title)));
   }, []);
 
+  const handleFilesSelected = (event) => {
+    const selected = Array.from(event.target.files || []);
+    if (selected.length === 0) return;
+    setFiles((prev) => [...prev, ...selected]);
+    event.target.value = "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -143,7 +150,7 @@ export default function GalleryForm() {
                     type="file"
                     className="sr-only"
                     multiple // Ek saath multiple files select karne ke liye
-                    onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                    onChange={handleFilesSelected}
                     accept="image/*" // Sirf images accept karega
                     required={files.length === 0} // Agar koi file select nahi hai to required
                   />
