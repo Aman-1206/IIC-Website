@@ -26,6 +26,10 @@ const TeamMemberSchema = new mongoose.Schema({
     trim: true,
     index: true,
   },
+  isDepartmentHead: {
+    type: Boolean,
+    default: false,
+  },
   linkedin: {
     type: String,
     trim: true,
