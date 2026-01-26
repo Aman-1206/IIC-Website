@@ -30,6 +30,7 @@ export default function ManageTeamPage() {
   const [category, setCategory] = useState('Student');
   const [image, setImage] = useState('');
   const [departmentSlug, setDepartmentSlug] = useState('');
+  const [isDepartmentHead, setIsDepartmentHead] = useState(false);
   const [linkedin, setLinkedin] = useState('');
   const [instagram, setInstagram] = useState('');
   const [file, setFile] = useState(null);
@@ -55,7 +56,7 @@ export default function ManageTeamPage() {
 
   const resetForm = () => {
     setEditingMemberId(null);
-    setName(''); setRole(''); setCategory('Student'); setImage(''); setDepartmentSlug('');
+    setName(''); setRole(''); setCategory('Student'); setImage(''); setDepartmentSlug(''); setIsDepartmentHead(false);
     setLinkedin(''); setInstagram(''); setFile(null);
   };
 
@@ -66,6 +67,7 @@ export default function ManageTeamPage() {
     setCategory(member.category);
     setImage(member.image);
     setDepartmentSlug(member.departmentSlug || '');
+    setIsDepartmentHead(!!member.isDepartmentHead);
     setLinkedin(member.linkedin || '');
     setInstagram(member.instagram || '');
     setFile(null);
@@ -74,8 +76,8 @@ export default function ManageTeamPage() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !role || (!image && !file && !editingMemberId)) {
-      toast.error('Please fill in Name, Role, and provide an Image.');
+    if (!name || !role || !departmentSlug.trim() || (!image && !file && !editingMemberId)) {
+      toast.error('Please fill in Name, Role, Department, and provide an Image.');
       return;
     }
     setIsSubmitting(true);
@@ -102,7 +104,9 @@ export default function ManageTeamPage() {
 
     const memberData = { 
       name, role, category, image: finalImageUrl, 
-      departmentSlug, linkedin, instagram 
+      departmentSlug: departmentSlug.trim(),
+      isDepartmentHead,
+      linkedin, instagram 
     };
 
     try {
@@ -177,7 +181,19 @@ export default function ManageTeamPage() {
               </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Department Slug (for URL, e.g., 'marketing')</label>
-              <input type="text" value={departmentSlug} onChange={(e) => setDepartmentSlug(e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" />
+              <input type="text" value={departmentSlug} onChange={(e) => setDepartmentSlug(e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2" required />
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                id="department-head"
+                type="checkbox"
+                checked={isDepartmentHead}
+                onChange={(e) => setIsDepartmentHead(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+              />
+              <label htmlFor="department-head" className="text-sm text-gray-700">
+                Mark as Department Head (shows on /team page)
+              </label>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -229,8 +245,17 @@ export default function ManageTeamPage() {
                   <div className="flex items-center gap-4">
                     <Image src={member.image} alt={member.name} width={40} height={40} className="rounded-full object-cover" />
                     <div>
-                      <p className="font-semibold">{member.name}</p>
-                      <p className="text-sm text-gray-500">{member.role}</p>
+                      <p className="font-semibold">
+                        {member.name}
+                        {member.isDepartmentHead && (
+                          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                            Head
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {member.role} {member.departmentSlug ? `• ${member.departmentSlug}` : ''}
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2">

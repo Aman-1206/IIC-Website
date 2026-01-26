@@ -91,11 +91,18 @@ export default function AdminAndMemberPage() {
   const [allUsers, setAllUsers] = useState([]);
 
   const requestOtp = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setError("Please enter your email");
+      return;
+    }
     setLoading(true);
     setError("");
     setSuccessMsg("");
     try {
-      const { data } = await axios.post("/api/auth/request-otp", { email });
+      const { data } = await axios.post("/api/auth/request-otp", {
+        email: normalizedEmail,
+      });
       if (data?.success) {
         setSuccessMsg("OTP sent successfully!");
       } else {

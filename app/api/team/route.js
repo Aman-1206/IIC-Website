@@ -9,7 +9,7 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // Define the specific leadership roles we want to display on the main team page
+    // Define the preferred leadership role order (used for sorting, not filtering)
     const facultyRoleOrder = ["IIC, SLC Principal", "Convener"];
     const studentRoleOrder = [
       "President",
@@ -19,24 +19,33 @@ export async function GET() {
       "Marketing Head",
       "PR Head",
       "Content Head",
-      "Event Manegement Head", 
-      "Graphics Head", 
-      "Technical Head"];
+      "Event Manegement Head",
+      "Graphics Head",
+      "Technical Head",
+    ];
 
-    const leadershipRoles = [...facultyRoleOrder, ...studentRoleOrder];
-
-    // Fetch only the members who have one of the leadership roles
-    const members = await TeamMember.find({ 'role': { $in: leadershipRoles } });
-
-    // Custom sort logic based on the predefined order
-    const customSort = (roleOrder) => (a, b) => {
-      const indexA = roleOrder.indexOf(a.role);
-      const indexB = roleOrder.indexOf(b.role);
-      return indexA - indexB;
+    const roleIndex = (roleOrder, role) => {
+      const index = roleOrder.indexOf(role);
+      return index === -1 ? Number.MAX_SAFE_INTEGER : index;
     };
 
-    const faculty = members.filter(m => m.category === 'Faculty').sort(customSort(facultyRoleOrder));
-    const students = members.filter(m => m.category === 'Student').sort(customSort(studentRoleOrder));
+    const sortByRoleAndOrder = (roleOrder) => (a, b) => {
+      const roleDiff = roleIndex(roleOrder, a.role) - roleIndex(roleOrder, b.role);
+      if (roleDiff !== 0) return roleDiff;
+      const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+      if (orderDiff !== 0) return orderDiff;
+      return (a.name || "").localeCompare(b.name || "");
+    };
+
+    // Fetch only department heads for the team page
+    const members = await TeamMember.find({ isDepartmentHead: true });
+
+    const faculty = members
+      .filter((m) => m.category === "Faculty")
+      .sort(sortByRoleAndOrder(facultyRoleOrder));
+    const students = members
+      .filter((m) => m.category === "Student")
+      .sort(sortByRoleAndOrder(studentRoleOrder));
     
     return NextResponse.json({ faculty, students });
   } catch (error) {
@@ -62,6 +71,7 @@ export async function POST(req) {
       image: body.image,
       category: body.category,
       departmentSlug: body.departmentSlug,
+      isDepartmentHead: body.isDepartmentHead === true,
       linkedin: body.linkedin,
       instagram: body.instagram,
       order: body.order,

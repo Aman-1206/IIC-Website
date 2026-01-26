@@ -9,7 +9,7 @@ async function getTeamData() {
     // We use an absolute URL for server-side fetching.
     // Ensure NEXT_PUBLIC_BASE_URL is set in your .env.local
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/team`, {
-      next: { revalidate: 3600 }, // Re-fetch data every hour
+      cache: "no-store",
     });
     if (!res.ok) {
       throw new Error("Failed to fetch team data");

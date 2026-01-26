@@ -4,7 +4,7 @@ import TeamMemberClientPage from '@/components/TeamMemberClientPage';
 async function getDepartmentData(slug) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/team/${slug}`, {
-      next: { revalidate: 3600 }, // Re-fetch data every hour
+      cache: "no-store",
     });
     if (!res.ok) {
       return null;
@@ -17,7 +17,8 @@ async function getDepartmentData(slug) {
 }
 
 export async function generateMetadata({ params }) {
-    const data = await getDepartmentData(params.id);
+    const { id } = await params;
+    const data = await getDepartmentData(id);
     if (!data) {
         return { title: 'Team Not Found' };
     }
@@ -28,7 +29,8 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function TeamPage({ params }) {
-  const data = await getDepartmentData(params.id);
+  const { id } = await params;
+  const data = await getDepartmentData(id);
 
   if (!data) {
     notFound();

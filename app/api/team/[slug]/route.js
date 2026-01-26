@@ -6,25 +6,23 @@ import TeamMember from "@/models/TeamMember";
 export async function GET(req, { params }) {
   try {
     await dbConnect();
-    const { slug } = params;
+    const { slug } = await params;
 
     if (!slug) {
       return NextResponse.json({ error: "Department slug is required." }, { status: 400 });
     }
 
-    // Pehle department head ko dhoondhenge
-    const head = await TeamMember.findOne({ departmentSlug: slug });
+    const normalizedSlug = decodeURIComponent(slug).trim();
+    const slugMatch = { $regex: `^${normalizedSlug}$`, $options: "i" };
 
-    if (!head) {
+    const allMembers = await TeamMember.find({ departmentSlug: slugMatch }).sort({ createdAt: 1 });
+
+    if (!allMembers.length) {
       return NextResponse.json({ error: "Department not found." }, { status: 404 });
     }
 
-    // Us department ke saare members ko dhoondhenge (head ko chhodkar)
-    const members = await TeamMember.find({ 
-      departmentSlug: slug, 
-      _id: { $ne: head._id } // Exclude the head from the members list
-    }).sort({ createdAt: 1 }); // Sort by joining date
-
+    const head = allMembers.find((member) => member.isDepartmentHead) || allMembers[0];
+    const members = allMembers.filter((member) => member._id.toString() !== head._id.toString());
     return NextResponse.json({ head, members });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch department members." }, { status: 500 });
