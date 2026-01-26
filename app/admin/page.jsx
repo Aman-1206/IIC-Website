@@ -95,26 +95,14 @@ export default function AdminAndMemberPage() {
     setError("");
     setSuccessMsg("");
     try {
-      // NextAuth provider throws an Error("OTP_SENT") to indicate OTP was emailed.
-      const result = await signIn("credentials", { email, redirect: false });
-      // Some providers return an object with error, others throw. Handle both.
-      if (result && result.error) {
-        if (result.error === "OTP_SENT") {
-          setSuccessMsg("OTP sent successfully!");
-        } else {
-          setError(result.error || "Failed to send OTP.");
-        }
-      } else {
-        // If no result.error, assume OTP was sent (best-effort fallback)
-        setSuccessMsg("If this email is registered, an OTP was sent.");
-      }
-    } catch (err) {
-      // NextAuth authorize may throw Error("OTP_SENT") — treat it as success
-      if (err?.message === "OTP_SENT") {
+      const { data } = await axios.post("/api/auth/request-otp", { email });
+      if (data?.success) {
         setSuccessMsg("OTP sent successfully!");
       } else {
-        setError(err?.message || "Failed to send OTP.");
+        setError(data?.error || "Failed to send OTP.");
       }
+    } catch (err) {
+      setError(err?.response?.data?.error || "Failed to send OTP.");
     } finally {
       setLoading(false);
     }
