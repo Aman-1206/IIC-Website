@@ -37,8 +37,11 @@ export async function GET() {
       return (a.name || "").localeCompare(b.name || "");
     };
 
-    // Fetch only department heads for the team page
-    const members = await TeamMember.find({ isDepartmentHead: true });
+    // Show department heads in the council sections, and also include
+    // birthday spotlight members even if they are not department heads.
+    const members = await TeamMember.find({
+      $or: [{ isDepartmentHead: true }, { birthdayActive: true }],
+    });
 
     const faculty = members
       .filter((m) => m.category === "Faculty")
@@ -74,6 +77,8 @@ export async function POST(req) {
       isDepartmentHead: body.isDepartmentHead === true,
       linkedin: body.linkedin,
       instagram: body.instagram,
+      birthdayActive: body.birthdayActive === true,
+      birthdayDate: body.birthdayDate || null,
       order: body.order,
     });
 

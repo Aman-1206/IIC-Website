@@ -32,10 +32,10 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
 
   const [heroEnabled, setHeroEnabled] = useState(false);
   const [heroAutoplayMs, setHeroAutoplayMs] = useState(4500);
-  const [extraImages, setExtraImages] = useState([]);
   const [extraSlides, setExtraSlides] = useState([]);
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Continuous animation loop
   useEffect(() => {
@@ -65,8 +65,12 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
         if (cancelled) return;
         setHeroEnabled(Boolean(data?.enabled));
         setHeroAutoplayMs(typeof data?.autoplayMs === "number" ? data.autoplayMs : 4500);
-        setExtraImages(Array.isArray(data?.images) ? data.images : []);
-        setExtraSlides(Array.isArray(data?.slides) ? data.slides : []);
+        const normalizedSlides = Array.isArray(data?.slides) && data.slides.length > 0
+          ? data.slides
+          : Array.isArray(data?.images)
+            ? data.images.map((desktopImage) => ({ desktopImage, mobileImage: "" }))
+            : [];
+        setExtraSlides(normalizedSlides);
       } catch {
         // keep default image silently
       }
@@ -77,68 +81,81 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateIsMobile = (event) => {
+      setIsMobile(event.matches);
+    };
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", updateIsMobile);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateIsMobile);
+    };
+  }, []);
+
   const slides = useMemo(() => {
     if (!heroEnabled) return [baseSlide];
 
-    const withImageOnly = Array.isArray(extraImages)
-      ? extraImages
-          .filter((src) => typeof src === "string" && src.trim())
-          .map((src) => ({
-            ...baseSlide,
-            title: "",
-            subtitle: "",
-            sec_title: "",
-            sec_sub: "",
-            image: "",
-            backgroundColor: "#000000",
-            backgroundImage: src,
-            backgroundOverlay: 0,
-            hideSideImage: true,
-            backgroundFit: "cover",
-          }))
-      : [];
-
-    const withFullSlide = Array.isArray(extraSlides)
+    const withConfiguredSlides = Array.isArray(extraSlides)
       ? extraSlides
           .map((item) => ({
-            title: item?.title || baseSlide.title,
-            subtitle: item?.subtitle || baseSlide.subtitle,
-            sec_title: item?.sec_title || baseSlide.sec_title,
-            sec_sub: item?.sec_sub || baseSlide.sec_sub,
+            ...baseSlide,
+            title: item?.title ?? "",
+            subtitle: item?.subtitle ?? "",
+            sec_title: item?.sec_title ?? "",
+            sec_sub: item?.sec_sub ?? "",
             btn1: item?.btn1 ?? baseSlide.btn1,
             btn2: item?.btn2 ?? baseSlide.btn2,
-            image:
-              typeof item?.image === "string" && item.image.trim() ? item.image : baseSlide.image,
+            image: "",
+            desktopImage:
+              typeof item?.desktopImage === "string" && item.desktopImage.trim()
+                ? item.desktopImage
+                : typeof item?.backgroundImage === "string" && item.backgroundImage.trim()
+                  ? item.backgroundImage
+                  : "",
+            mobileImage:
+              typeof item?.mobileImage === "string" && item.mobileImage.trim()
+                ? item.mobileImage
+                : "",
             backgroundColor:
               typeof item?.backgroundColor === "string" && item.backgroundColor.trim()
                 ? item.backgroundColor
                 : baseSlide.backgroundColor,
-            backgroundImage:
-              typeof item?.backgroundImage === "string" && item.backgroundImage.trim()
-                ? item.backgroundImage
-                : "",
             backgroundOverlay:
               typeof item?.backgroundOverlay === "number"
                 ? Math.min(1, Math.max(0, item.backgroundOverlay))
-                : baseSlide.backgroundOverlay,
-            hideSideImage: Boolean(item?.hideSideImage),
+                : 0,
+            hideSideImage: true,
             backgroundFit:
               item?.backgroundFit === "contain" || item?.backgroundFit === "cover"
                 ? item.backgroundFit
                 : baseSlide.backgroundFit,
           }))
-          .filter((item) => item.image || item.backgroundImage)
+          .map((item) => ({
+            ...item,
+            backgroundImage: isMobile && item.mobileImage ? item.mobileImage : item.desktopImage,
+          }))
+          .filter((item) => item.backgroundImage)
       : [];
 
-    const extra = withFullSlide.length > 0 ? withFullSlide : withImageOnly;
-    return [baseSlide, ...extra].slice(0, 5);
-  }, [baseSlide, extraImages, extraSlides, heroEnabled]);
+    return [baseSlide, ...withConfiguredSlides].slice(0, 5);
+  }, [baseSlide, extraSlides, heroEnabled, isMobile]);
 
   const activeSlide = slides[index] || baseSlide;
   const hasTitle = Boolean(activeSlide.title || activeSlide.sec_title);
   const hasSubtitle = Boolean(activeSlide.subtitle || activeSlide.sec_sub);
   const canShowButtons = Boolean(activeSlide.btn1 && activeSlide.btn2);
   const isPosterSlide = Boolean(activeSlide.hideSideImage && activeSlide.backgroundImage);
+  const isMobilePosterFallback = Boolean(
+    isMobile &&
+      isPosterSlide &&
+      !activeSlide.mobileImage &&
+      activeSlide.backgroundImage
+  );
+  const backgroundSize = activeSlide.backgroundFit === "contain" ? "contain" : "cover";
+  const backgroundPosition = "center";
 
   // keep index in range when slides change
   useEffect(() => {
@@ -204,7 +221,11 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
   };
 
   return (
-    <section className="relative text-white py-10 md:py-12 px-6 lg:px-12 xl:px-20 overflow-hidden">
+    <section
+      className={`relative text-white py-10 md:py-12 px-6 lg:px-12 xl:px-20 overflow-hidden ${
+        isMobilePosterFallback ? "bg-[#08246A]" : ""
+      }`}
+    >
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div
           key={`bg-${index}-${activeSlide.backgroundColor}-${activeSlide.backgroundImage}`}
@@ -217,12 +238,12 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
           className="absolute inset-0"
           style={{
             backgroundColor: activeSlide.backgroundColor || "#08246A",
-            backgroundImage: activeSlide.backgroundImage
+            backgroundImage: activeSlide.backgroundImage && !isMobilePosterFallback
               ? `linear-gradient(rgba(8, 36, 106, ${activeSlide.backgroundOverlay}), rgba(8, 36, 106, ${activeSlide.backgroundOverlay})), url(${activeSlide.backgroundImage})`
               : "none",
-            backgroundSize: activeSlide.backgroundFit === "contain" ? "contain" : "cover",
+            backgroundSize,
             backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
+            backgroundPosition,
           }}
         />
       </AnimatePresence>
@@ -249,8 +270,26 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
                 paginate(-1);
               }
             }}
-            className="relative flex min-h-[400px] md:min-h-[500px] flex-col md:flex-row items-center gap-8 md:gap-12 lg:gap-16"
+            className={`relative flex flex-col md:flex-row items-center gap-8 md:gap-12 lg:gap-16 ${
+              isMobilePosterFallback ? "min-h-0" : "min-h-[400px] md:min-h-[500px]"
+            }`}
           >
+            {isMobilePosterFallback && (
+              <div className="w-full">
+                <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-2xl border border-white/15 bg-white/10 shadow-2xl">
+                  <Image
+                    src={activeSlide.backgroundImage}
+                    alt={activeSlide.title || "Hero"}
+                    width={1200}
+                    height={675}
+                    quality={100}
+                    className="h-auto w-full"
+                    priority
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4 md:space-y-6 flex-1">
               {hasTitle && (
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
@@ -269,7 +308,7 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
               )}
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                {canShowButtons && !isPosterSlide && (
+                {canShowButtons && (!isPosterSlide || isMobilePosterFallback) && (
                   <>
                     <Button
                       onClick={() => handleBtn(activeSlide.btn1)}
@@ -346,7 +385,7 @@ const Hero = ({ title, subtitle, sec_title, sec_sub, btn1, btn2, image }) => {
           </motion.div>
         </AnimatePresence>
 
-        {canShowButtons && isPosterSlide && (
+        {canShowButtons && isPosterSlide && !isMobilePosterFallback && (
           <div className="absolute left-6 md:left-8 bottom-14 md:bottom-16 z-20 flex flex-col sm:flex-row gap-4">
             <Button
               onClick={() => handleBtn(activeSlide.btn1)}

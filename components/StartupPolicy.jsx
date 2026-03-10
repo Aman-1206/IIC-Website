@@ -7,34 +7,34 @@ import { startupPolicy } from "@/lib/startupPolicy";
 
 const StartupPolicy = () => {
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white">
+    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white dark:from-[#07111f] dark:to-[#0b1220]">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold text-[#003566] sm:text-4xl">
+          <h1 className="text-5xl font-extrabold text-[#003566] dark:text-slate-100 sm:text-4xl">
             Startup & <span className="text-orange-600">Innovation Policy</span>
           </h1>
-          <p className="text-xl text-blue-600 font-medium mt-2">
+          <p className="text-xl text-blue-600 dark:text-blue-300 font-medium mt-2">
             {startupPolicy.subtitle}
           </p>
-          <p className="text-lg text-gray-600 mt-1">
+          <p className="text-lg text-gray-600 dark:text-slate-400 mt-1">
             {startupPolicy.institution}
           </p>
-          <div className="mt-6 p-4 bg-blue-100 rounded-lg max-w-3xl mx-auto">
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">Vision</h3>
-            <p className="text-gray-700">{startupPolicy.vision}</p>
+          <div className="mt-6 p-4 bg-blue-100 dark:bg-slate-800/80 border border-blue-200 dark:border-slate-700 rounded-lg max-w-3xl mx-auto">
+            <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-2">Vision</h3>
+            <p className="text-gray-700 dark:text-slate-300">{startupPolicy.vision}</p>
           </div>
         </div>
 
         {/* Policy Accordion */}
-        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          <Accordion type="multiple" className="w-full divide-y divide-gray-200">
+        <div className="bg-white dark:bg-[#0f172a] shadow-xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+          <Accordion type="multiple" className="w-full divide-y divide-gray-200 dark:divide-slate-800">
             {startupPolicy.sections.map((section, index) => (
               <AccordionItem key={index} value={`item-${index}`} className="px-6 py-4">
-                <AccordionTrigger className="text-xl font-semibold text-blue-600 hover:text-orange-600">
+                <AccordionTrigger className="text-xl font-semibold text-blue-600 dark:text-blue-300 hover:text-orange-600 dark:hover:text-orange-400">
                   {section.title}
                 </AccordionTrigger>
-                <AccordionContent className="mt-4 text-gray-700">
+                <AccordionContent className="mt-4 text-gray-700 dark:text-slate-300">
                   {section.content ? (
                     <ul className="space-y-2 pl-5  text-[16px]">
                       {section.content.map((point, i) => (
@@ -50,8 +50,8 @@ const StartupPolicy = () => {
                   {section.subsections && (
                     <div className="space-y-6 mt-4">
                       {section.subsections.map((subsection, subIndex) => (
-                        <div key={subIndex} className="pl-4 border-l-2 border-blue-200">
-                          <h4 className="text-lg font-medium text-orange-600 mb-2">
+                        <div key={subIndex} className="pl-4 border-l-2 border-blue-200 dark:border-slate-700">
+                          <h4 className="text-lg font-medium text-orange-600 dark:text-orange-400 mb-2">
                             {subsection.title}
                           </h4>
                           <ul className="space-y-2 pl-5 text-[16px]">

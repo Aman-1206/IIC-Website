@@ -23,7 +23,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <link rel="icon" href="/favicon.ico" />
-      <body className={outfit.className}>
+      <body className={`${outfit.className} bg-white text-slate-900 transition-colors duration-300 dark:bg-[#07111f] dark:text-slate-100`}>
         <Providers>
           <EdgeStoreProvider>
           <Navbar />

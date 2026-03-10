@@ -9,9 +9,35 @@ import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp, ImagePlus, Loader2, Save, Trash2 } from "lucide-react";
 
 const DEFAULT_IMAGE = "/assets/hero.png";
+const MAX_EXTRA_SLIDES = 4;
 
 function clamp(num, min, max) {
   return Math.min(max, Math.max(min, num));
+}
+
+function createEmptySlide() {
+  return {
+    desktopImage: "",
+    mobileImage: "",
+  };
+}
+
+function normalizeSlides(slides, legacyImages = []) {
+  if (Array.isArray(slides) && slides.length > 0) {
+    return slides.map((slide) => ({
+      desktopImage: slide?.desktopImage || "",
+      mobileImage: slide?.mobileImage || "",
+    }));
+  }
+
+  if (Array.isArray(legacyImages) && legacyImages.length > 0) {
+    return legacyImages.map((url) => ({
+      desktopImage: url || "",
+      mobileImage: "",
+    }));
+  }
+
+  return [];
 }
 
 export default function ManageHeroPage() {
@@ -30,7 +56,7 @@ export default function ManageHeroPage() {
 
   const [enabled, setEnabled] = useState(false);
   const [autoplayMs, setAutoplayMs] = useState(4500);
-  const [images, setImages] = useState([]); // extra images only
+  const [slides, setSlides] = useState([]);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/admin");
@@ -46,7 +72,7 @@ export default function ManageHeroPage() {
         if (cancelled) return;
         setEnabled(Boolean(data?.enabled));
         setAutoplayMs(typeof data?.autoplayMs === "number" ? data.autoplayMs : 4500);
-        setImages(Array.isArray(data?.images) ? data.images : []);
+        setSlides(normalizeSlides(data?.slides, data?.images));
       } catch {
         toast.error("Failed to load hero settings.");
       } finally {
@@ -59,8 +85,8 @@ export default function ManageHeroPage() {
     };
   }, []);
 
-  const moveImage = (from, to) => {
-    setImages((prev) => {
+  const moveSlide = (from, to) => {
+    setSlides((prev) => {
       if (to < 0 || to >= prev.length) return prev;
       const next = [...prev];
       const [item] = next.splice(from, 1);
@@ -69,34 +95,30 @@ export default function ManageHeroPage() {
     });
   };
 
-  const removeImage = (idx) => {
-    setImages((prev) => prev.filter((_, i) => i !== idx));
+  const removeSlide = (idx) => {
+    setSlides((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleUpload = async (files) => {
-    const list = Array.from(files || []);
-    if (list.length === 0) return;
-
-    const remainingSlots = 4 - images.length;
-    if (remainingSlots <= 0) {
-      toast.error("Maximum 5 slides reached (default + 4). Remove an image first.");
+  const addSlide = () => {
+    if (slides.length >= MAX_EXTRA_SLIDES) {
+      toast.error("Maximum 5 slides reached (default + 4). Remove a slide first.");
       return;
     }
+    setSlides((prev) => [...prev, createEmptySlide()]);
+  };
 
-    const toUpload = list.slice(0, remainingSlots);
-    if (toUpload.length < list.length) {
-      toast.message(`Only ${remainingSlots} more image(s) can be added.`);
-    }
+  const uploadImage = async (file, idx, field) => {
+    if (!file) return;
 
     try {
       setUploading(true);
-      const uploadedUrls = [];
-      for (const file of toUpload) {
-        const res = await edgestore.publicFiles.upload({ file });
-        uploadedUrls.push(res.url);
-      }
-      setImages((prev) => [...prev, ...uploadedUrls]);
-      toast.success("Hero image(s) uploaded.");
+      const res = await edgestore.publicFiles.upload({ file });
+      setSlides((prev) =>
+        prev.map((slide, slideIdx) =>
+          slideIdx === idx ? { ...slide, [field]: res.url } : slide
+        )
+      );
+      toast.success(field === "mobileImage" ? "Mobile image uploaded." : "Desktop image uploaded.");
     } catch (e) {
       console.error(e);
       toast.error("Upload failed. Please try again.");
@@ -105,10 +127,30 @@ export default function ManageHeroPage() {
     }
   };
 
+  const clearMobileImage = (idx) => {
+    setSlides((prev) =>
+      prev.map((slide, slideIdx) =>
+        slideIdx === idx ? { ...slide, mobileImage: "" } : slide
+      )
+    );
+  };
+
   const save = async () => {
     if (!canEdit) return toast.error("You don't have permission to update hero settings.");
-    const extraCount = images.length;
-    if (enabled && extraCount < 2) {
+
+    const incompleteSlide = slides.some((slide) => !slide.desktopImage && slide.mobileImage);
+    if (incompleteSlide) {
+      return toast.error("Upload a desktop image before adding a mobile-only image.");
+    }
+
+    const normalized = slides
+      .map((slide) => ({
+        desktopImage: typeof slide?.desktopImage === "string" ? slide.desktopImage.trim() : "",
+        mobileImage: typeof slide?.mobileImage === "string" ? slide.mobileImage.trim() : "",
+      }))
+      .filter((slide) => slide.desktopImage);
+
+    if (enabled && normalized.length < 2) {
       return toast.error("When slider is enabled, add at least 2 extra images (3 total with default).");
     }
 
@@ -120,7 +162,7 @@ export default function ManageHeroPage() {
         body: JSON.stringify({
           enabled,
           autoplayMs: clamp(Number(autoplayMs) || 4500, 2000, 10000),
-          images,
+          slides: normalized,
         }),
       });
 
@@ -128,7 +170,7 @@ export default function ManageHeroPage() {
       if (!res.ok) throw new Error(data?.error || "Save failed");
       setEnabled(Boolean(data?.enabled));
       setAutoplayMs(data?.autoplayMs ?? 4500);
-      setImages(Array.isArray(data?.images) ? data.images : []);
+      setSlides(normalizeSlides(data?.slides, data?.images));
       toast.success("Hero settings saved.");
     } catch (e) {
       toast.error(e?.message || "Could not save hero settings.");
@@ -145,21 +187,23 @@ export default function ManageHeroPage() {
     );
   }
 
+  const savedSlideCount = slides.filter((slide) => slide.desktopImage).length;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-10 px-3 sm:px-4">
+      <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-2xl p-4 sm:p-6 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#08246A]">Homepage Hero Slider</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Default hero image stays. Add 2–4 extra images to make 3–5 slides.
+              Default hero image stays. Add 2-4 extra slides to make 3-5 slides.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push("/admin")}>
+          <div className="flex w-full sm:w-auto gap-2">
+            <Button variant="outline" onClick={() => router.push("/admin")} className="flex-1 sm:flex-none">
               Back
             </Button>
-            <Button onClick={save} disabled={saving || uploading || !canEdit}>
+            <Button onClick={save} disabled={saving || uploading || !canEdit} className="flex-1 sm:flex-none">
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
@@ -170,7 +214,7 @@ export default function ManageHeroPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-6 grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className="border rounded-xl p-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-800">Settings</h2>
@@ -195,24 +239,21 @@ export default function ManageHeroPage() {
                 onChange={(e) => setAutoplayMs(e.target.value)}
                 className="mt-1 w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-orange-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Recommended: 3500–5500ms</p>
+              <p className="text-xs text-gray-500 mt-1">Recommended: 3500-5500ms</p>
             </div>
 
             <div className="mt-6">
-              <label className="text-sm font-medium text-gray-700">Add extra hero images</label>
-              <div className="mt-2 flex items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50">
+              <label className="text-sm font-medium text-gray-700">Extra hero slides</label>
+              <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                <button
+                  type="button"
+                  onClick={addSlide}
+                  disabled={uploading || slides.length >= MAX_EXTRA_SLIDES}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   <ImagePlus className="h-4 w-4" />
-                  <span className="text-sm">Upload</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={(e) => handleUpload(e.target.files)}
-                    disabled={uploading}
-                  />
-                </label>
+                  <span className="text-sm">Add slide</span>
+                </button>
                 {uploading && (
                   <span className="text-sm text-gray-600 inline-flex items-center">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -221,23 +262,23 @@ export default function ManageHeroPage() {
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Max: 4 extra images (total 5 slides including default).
+                Desktop image is required. Mobile image is optional and only used on phones.
               </p>
             </div>
 
             <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
-              <p className="text-sm font-semibold text-blue-900">Image size guide (best fit)</p>
+              <p className="text-sm font-semibold text-blue-900">Image size guide</p>
               <div className="mt-2 space-y-1 text-xs text-blue-900/90">
                 <p>
-                  Aspect ratio: <span className="font-semibold">2:1 (landscape)</span>
+                  Desktop recommended: <span className="font-semibold">2000 x 1000 px</span>
                 </p>
                 <p>
-                  Recommended: <span className="font-semibold">2000 x 1000 px</span>
+                  Mobile recommended: <span className="font-semibold">900 x 1400 px</span>
                 </p>
                 <p>
-                  Minimum for clarity: <span className="font-semibold">1600 x 800 px</span>
+                  Desktop slides should stay landscape for large screens.
                 </p>
-                <p>Portrait uploads may leave empty side space in the hero section.</p>
+                <p>Leave mobile blank to keep using the desktop banner on phones.</p>
               </div>
             </div>
           </div>
@@ -246,63 +287,140 @@ export default function ManageHeroPage() {
             <h2 className="font-semibold text-gray-800">Slides order</h2>
 
             <div className="mt-4 space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl border bg-gray-50">
-                <div className="h-14 w-20 rounded-lg overflow-hidden bg-white border">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl border bg-gray-50">
+                <div className="h-14 w-20 rounded-lg overflow-hidden bg-white border shrink-0">
                   <img src={DEFAULT_IMAGE} alt="Default hero" className="h-full w-full object-cover" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800">Default hero image</p>
-                  <p className="text-xs text-gray-500">{DEFAULT_IMAGE}</p>
+                  <p className="text-xs text-gray-500 break-all">{DEFAULT_IMAGE}</p>
                 </div>
                 <span className="text-xs text-gray-600">Always included</span>
               </div>
 
-              {images.length === 0 ? (
+              {slides.length === 0 ? (
                 <div className="text-sm text-gray-600 p-4 border rounded-xl">
-                  No extra images yet. Upload 2–4 images to enable a 3–5 image slider.
+                  No extra slides yet. Add 2-4 slides to enable a 3-5 image slider.
                 </div>
               ) : (
-                images.map((url, idx) => (
-                  <div key={url} className="flex items-center gap-3 p-3 rounded-xl border">
-                    <div className="h-14 w-20 rounded-lg overflow-hidden bg-gray-100 border">
-                      <img src={url} alt={`Hero ${idx + 2}`} className="h-full w-full object-cover" />
+                slides.map((slide, idx) => (
+                  <div key={`${slide.desktopImage || "empty"}-${idx}`} className="rounded-xl border p-3 overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800">Slide {idx + 2}</p>
+                        <p className="text-xs text-gray-500">
+                          Desktop image required. Mobile image optional.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 sm:flex items-center gap-2 w-full sm:w-auto">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => moveSlide(idx, idx - 1)}
+                          disabled={idx === 0}
+                          aria-label="Move up"
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => moveSlide(idx, idx + 1)}
+                          disabled={idx === slides.length - 1}
+                          aria-label="Move down"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeSlide(idx)}
+                          aria-label="Delete slide"
+                          title="Delete slide"
+                          className="px-3 border-red-600 bg-red-600 text-white hover:bg-red-700 hover:text-white"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">Slide {idx + 2}</p>
-                      <p className="text-xs text-gray-500 truncate">{url}</p>
-                    </div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2 min-w-0">
+                      <div className="rounded-xl border p-3 bg-gray-50 min-w-0">
+                        <div className="h-28 w-full rounded-lg overflow-hidden bg-white border">
+                          {slide.desktopImage ? (
+                            <img
+                              src={slide.desktopImage}
+                              alt={`Desktop slide ${idx + 2}`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-gray-500">
+                              No desktop image
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs font-medium text-gray-700">Desktop image</p>
+                        <p className="text-xs text-gray-500 break-all min-h-4">
+                          {slide.desktopImage || "Required"}
+                        </p>
+                        <label className="mt-3 inline-flex w-full sm:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-white text-sm">
+                          <ImagePlus className="h-4 w-4" />
+                          Upload desktop
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => uploadImage(e.target.files?.[0], idx, "desktopImage")}
+                            disabled={uploading}
+                          />
+                        </label>
+                      </div>
 
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => moveImage(idx, idx - 1)}
-                        disabled={idx === 0}
-                        aria-label="Move up"
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => moveImage(idx, idx + 1)}
-                        disabled={idx === images.length - 1}
-                        aria-label="Move down"
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeImage(idx)}
-                        aria-label="Delete slide"
-                        title="Delete slide"
-                        className="px-3 border-red-600 bg-red-600 text-white hover:bg-red-700 hover:text-white"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
+                      <div className="rounded-xl border p-3 bg-gray-50 min-w-0">
+                        <div className="h-28 w-full rounded-lg overflow-hidden bg-white border">
+                          {slide.mobileImage ? (
+                            <img
+                              src={slide.mobileImage}
+                              alt={`Mobile slide ${idx + 2}`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-gray-500">
+                              Fallback to desktop image
+                            </div>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs font-medium text-gray-700">Mobile image</p>
+                        <p className="text-xs text-gray-500 break-all min-h-4">
+                          {slide.mobileImage || "Optional"}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <label className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-3 py-2 rounded-lg border border-gray-300 cursor-pointer hover:bg-white text-sm">
+                            <ImagePlus className="h-4 w-4" />
+                            Upload mobile
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => uploadImage(e.target.files?.[0], idx, "mobileImage")}
+                              disabled={uploading || !slide.desktopImage}
+                            />
+                          </label>
+                          {slide.mobileImage && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => clearMobileImage(idx)}
+                              className="w-full sm:w-auto"
+                            >
+                              Remove mobile
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -310,7 +428,7 @@ export default function ManageHeroPage() {
             </div>
 
             <div className="mt-4 text-xs text-gray-600">
-              Total slides on homepage: <span className="font-semibold">{1 + images.length}</span>
+              Total slides on homepage: <span className="font-semibold">{1 + savedSlideCount}</span>
             </div>
           </div>
         </div>

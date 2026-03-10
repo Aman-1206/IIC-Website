@@ -33,6 +33,8 @@ export default function ManageTeamPage() {
   const [isDepartmentHead, setIsDepartmentHead] = useState(false);
   const [linkedin, setLinkedin] = useState('');
   const [instagram, setInstagram] = useState('');
+  const [birthdayActive, setBirthdayActive] = useState(false);
+  const [birthdayDate, setBirthdayDate] = useState('');
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,7 +59,7 @@ export default function ManageTeamPage() {
   const resetForm = () => {
     setEditingMemberId(null);
     setName(''); setRole(''); setCategory('Student'); setImage(''); setDepartmentSlug(''); setIsDepartmentHead(false);
-    setLinkedin(''); setInstagram(''); setFile(null);
+    setLinkedin(''); setInstagram(''); setBirthdayActive(false); setBirthdayDate(''); setFile(null);
   };
 
   const handleEdit = (member) => {
@@ -70,6 +72,8 @@ export default function ManageTeamPage() {
     setIsDepartmentHead(!!member.isDepartmentHead);
     setLinkedin(member.linkedin || '');
     setInstagram(member.instagram || '');
+    setBirthdayActive(!!member.birthdayActive);
+    setBirthdayDate(member.birthdayDate ? new Date(member.birthdayDate).toISOString().split('T')[0] : '');
     setFile(null);
     formRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -106,7 +110,9 @@ export default function ManageTeamPage() {
       name, role, category, image: finalImageUrl, 
       departmentSlug: departmentSlug.trim(),
       isDepartmentHead,
-      linkedin, instagram 
+      linkedin, instagram,
+      birthdayActive,
+      birthdayDate: birthdayDate || null,
     };
 
     try {
@@ -195,6 +201,32 @@ export default function ManageTeamPage() {
                 Mark as Department Head (shows on /team page)
               </label>
             </div>
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <input
+                  id="birthday-active"
+                  type="checkbox"
+                  checked={birthdayActive}
+                  onChange={(e) => setBirthdayActive(e.target.checked)}
+                  className="h-4 w-4 text-orange-600 border-gray-300 rounded"
+                />
+                <label htmlFor="birthday-active" className="text-sm font-medium text-gray-700">
+                  Show birthday celebration on Team Council page
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Birthday Date</label>
+                <input
+                  type="date"
+                  value={birthdayDate}
+                  onChange={(e) => setBirthdayDate(e.target.value)}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Optional. Used on the birthday spotlight card when present.
+                </p>
+              </div>
+            </div>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
@@ -250,6 +282,11 @@ export default function ManageTeamPage() {
                         {member.isDepartmentHead && (
                           <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
                             Head
+                          </span>
+                        )}
+                        {member.birthdayActive && (
+                          <span className="ml-2 text-xs bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full">
+                            Birthday
                           </span>
                         )}
                       </p>

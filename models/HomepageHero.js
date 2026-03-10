@@ -1,5 +1,13 @@
 import mongoose from "mongoose";
 
+const HomepageHeroSlideSchema = new mongoose.Schema(
+  {
+    desktopImage: { type: String, default: "" },
+    mobileImage: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const HomepageHeroSchema = new mongoose.Schema(
   {
     key: { type: String, default: "singleton", unique: true, index: true },
@@ -9,6 +17,11 @@ const HomepageHeroSchema = new mongoose.Schema(
      * Slider will be: [defaultImage, ...images] up to 5 total.
      */
     images: { type: [String], default: [] },
+    /**
+     * Rich slide config for extra hero slides.
+     * `desktopImage` is required logically, `mobileImage` is optional.
+     */
+    slides: { type: [HomepageHeroSlideSchema], default: [] },
     autoplayMs: { type: Number, default: 4500 },
   },
   { timestamps: true }

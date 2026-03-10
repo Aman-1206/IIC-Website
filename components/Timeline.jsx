@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useAnimation } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const events = [
   { year: 2018, title: "Launch Year", description: "Ideation, Problem-Solving, Design Thinking, IP Awareness" },
@@ -17,6 +17,8 @@ const events = [
 const Timeline = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const controls = useAnimation();
+  const lineRef = useRef(null);
+  const milestoneRefs = useRef([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -27,10 +29,27 @@ const Timeline = () => {
   }, []);
 
   useEffect(() => {
-    controls.start({
-      left: `${(activeIndex / (events.length - 1)) * 100}%`,
-      transition: { duration: 0.8 }
-    });
+    const updateFlagPosition = () => {
+      const lineEl = lineRef.current;
+      const activeEl = milestoneRefs.current[activeIndex];
+      if (!lineEl || !activeEl) return;
+
+      const lineRect = lineEl.getBoundingClientRect();
+      const activeRect = activeEl.getBoundingClientRect();
+      const left = activeRect.left + activeRect.width / 2 - lineRect.left;
+
+      controls.start({
+        left,
+        transition: { duration: 0.8 },
+      });
+    };
+
+    updateFlagPosition();
+    window.addEventListener("resize", updateFlagPosition);
+
+    return () => {
+      window.removeEventListener("resize", updateFlagPosition);
+    };
   }, [activeIndex, controls]);
 
   return (
@@ -39,7 +58,7 @@ const Timeline = () => {
 
       <div className="relative w-full">
         {/* Timeline Line */}
-        <div className="relative h-[4rem] sm:h-[5rem]">
+        <div ref={lineRef} className="relative h-[4rem] sm:h-[5rem]">
           <div className="absolute top-1/2 left-0 w-full h-[2px] bg-[#012356] transform -translate-y-1/2 z-0" />
 
           {/* Flag */}
@@ -48,7 +67,6 @@ const Timeline = () => {
             className="absolute z-10"
             style={{
               top: 'calc(1% - 2rem)', // align the bottom of the flag to the timeline line
-              left: `${(activeIndex / (events.length - 1)) * 100}%`,
               transform: 'translateX(-50%)',
             }}
           >
@@ -65,7 +83,10 @@ const Timeline = () => {
               <div
                 key={event.year}
                 onClick={() => setActiveIndex(index)}
-                className="text-center w-1/6 cursor-pointer"
+                ref={(element) => {
+                  milestoneRefs.current[index] = element;
+                }}
+                className="flex-1 min-w-0 text-center cursor-pointer"
               >
                 <div className={`w-3 h-3 mx-auto rounded-full ${index === activeIndex ? 'bg-orange-500 scale-125' : 'bg-[#012356]'} transition-all`} />
                 <p className="mt-2 text-xs sm:text-sm md:text-base font-medium">{event.year}</p>

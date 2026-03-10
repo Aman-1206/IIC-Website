@@ -38,6 +38,14 @@ const TeamMemberSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  birthdayDate: {
+    type: Date,
+    default: null,
+  },
+  birthdayActive: {
+    type: Boolean,
+    default: false,
+  },
   // We can add a field for ordering members on the page
   order: {
     type: Number,
