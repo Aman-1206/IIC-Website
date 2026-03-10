@@ -19,3 +19,4 @@ Chatbot upcoming events Excel setup
 
 Optional:
 Set env var UPCOMING_EVENTS_EXCEL_PATH to override file path.
+Fixed
